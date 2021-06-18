@@ -77,10 +77,10 @@ class Tank(Game_object):
 
 
 		if key == pygame.K_SPACE and eventtype == pygame.KEYDOWN:
-			#self.cannon.event("space", 1)
+			self.cannon.event(space=1)
 			self.shot_power_amp = 10
 		if key == pygame.K_SPACE and eventtype == pygame.KEYUP:
-			#self.cannon.event("space", 0)
+			self.cannon.event(space=0)
 			self.shot()
 
 
@@ -143,23 +143,24 @@ class TankCannon(Game_object):
 	def __init__(self, position, speed=[0,0], name=None, gameplay_instance=None):
 		super().__init__(position, speed, "tankcannon", gameplay_instance)
 
-	def event(self, eventname=None, eventvalue=0):
-		if eventname == "left" and eventvalue == 1:
-			self.moveleft = 1
-		if eventname == "left" and eventvalue == 0:
-			self.moveleft = 0
-		if eventname == "right" and eventvalue == 1:
-			self.moveright = 1
-		if eventname == "right" and eventvalue == 0:
-			self.moveright = 0
-		if eventname == "space" and eventvalue == 1:
-			self.shot_power_amp = 10
-		if eventname == "space" and eventvalue == 0:
-			self.shot_power_amp = 0
-			self.shot()
+	def event(self, **event):
+		if "left" in event:
+			self.moveleft = event['left']
+		if "right" in event:
+			self.moveright = event['right']
+		if "space" in event:
+			self.moveright = event['space']
+			if event['space'] == 1:
+				self.shot_power_amp = 10
+			if event['space'] == 0:
+				self.shot_power_amp = 0
+				self.shot()
 		self.movecannon = self.moveright - self.moveleft
 
 	def move(self):
+		pass
+
+	def shot(self):
 		pass
 
 class Shell(Game_object):
