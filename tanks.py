@@ -3,22 +3,17 @@ import math
 
 def phisical_move(speed, acceleraton=[0,0], gravity=False, wind_speed=0, environment_resistance=0.00001):
 	if gravity:
-		g = 9.81 / 2
+		g = 9.81 / 2 # подобрать оптимальный g
 	else:
 		g = 0
-		#BAG при отрицательной скорости происходит баг, и скорость начинает расти
 	if speed[0] > 0:
 		speed[0] = round(speed[0] + acceleraton[0] - (environment_resistance*speed[0]**2), 5)
 	else:
 		speed[0] = round(speed[0] + acceleraton[0] + (environment_resistance*speed[0]**2), 5)
-
 	if speed[1] > 0:
 		speed[1] = round(speed[1] + acceleraton[1] - g - (environment_resistance*speed[1]**2), 5)
 	else:
 		speed[1] = round(speed[1] + acceleraton[1] - g + (environment_resistance*speed[1]**2), 5)
-
-
-	#print(speed[0])
 	return speed
 
 class Game_object:
@@ -48,9 +43,6 @@ class Tank(Game_object):
 	shell_count = 0
 	keyleft = keyright = 0
 	acceleraton_vector = 0
-	shot_power = 100
-	shot_power_amp = 0
-
 
 	def __init__(self, position=[0,0], speed=[0,0], name=None, gameplay_instance = None):
 		super().__init__(position, speed, "Tank", gameplay_instance)
@@ -59,12 +51,10 @@ class Tank(Game_object):
 		self.decceleration = 0.002 * FPS
 
 		self.picture = pygame.image.load("tank.png").convert_alpha()
-		self.picture.set_colorkey(COROR_WHITE)
-		self.rectangle = self.picture.get_rect()
-		self.picture.set_colorkey(COLOR_BLACK) 
-		self.rectangle.x = int(round(self.position[0]-self.rectangle.width/2))
-		self.rectangle.y = int(round(self.position[1]-self.rectangle.height))
-		self.cannon = TankCannon(self.position[:], gameplay_instance=self.gameplay_instance)
+		self.picture.set_colorkey(COLOR_WHITE)
+		self.rectangle = self.picture.get_rect() 
+		self.rectangle.midbottom = [int(round(self.position[0])), int(round(self.position[1]))]
+		self.cannon = TankCannon(self.position[:], gameplay_instance=gameplay_instance)
 
 	def key_handler(self, key, eventtype):
 		if key == pygame.K_LEFT and eventtype == pygame.KEYDOWN:
@@ -87,20 +77,15 @@ class Tank(Game_object):
 		if key == pygame.K_DOWN and eventtype == pygame.KEYUP:
 			self.cannon.event(right=0)
 
-
 		if key == pygame.K_SPACE and eventtype == pygame.KEYDOWN:
 			self.cannon.event(space=1)
 			self.shot_power_amp = 10
 		if key == pygame.K_SPACE and eventtype == pygame.KEYUP:
 			self.cannon.event(space=0)
-			self.shot()
 
 
 	def move(self):
-		self.cannon.move([self.position[0],self.position[1]-self.rectangle.height])
-		if self.shot_power < 1000 and self.shot_power_amp > 0:
-			self.shot_power = self.shot_power + self.shot_power_amp
-
+		self.cannon.move([self.position[0] - 10, self.position[1]-self.rectangle.height/2])
 
 		if self.speed[0] == 0 and self.acceleraton_vector == 0:
 			return
@@ -111,63 +96,39 @@ class Tank(Game_object):
 			if self.speed[0] < 0:
 				self.speed[0] = self.speed[0] + self.decceleration
 
-		self.speed[0] = self.speed[0] + self.acceleraton_vector * self.acceleraton
+		self.speed[0] = round(self.speed[0] + self.acceleraton_vector * self.acceleraton, 4)
 
 		# tank speed limit
 		if self.speed[0] >= self.topspeed:
 			self.speed[0] = self.topspeed
 		if self.speed[0] <= -self.topspeed:
 			self.speed[0] = -self.topspeed
-		self.speed[0] = round(self.speed[0], 4) # костыль с плавающей точкой
 		self.position[0] = self.position[0] + self.speed[0]/FPS 
-		self.position[1] = self.position[1] + self.speed[1]/FPS
-
-		self.rectangle.x = int(round(self.position[0]-self.rectangle.width/2))
-		self.rectangle.y = int(round(self.position[1]-self.rectangle.height))
-
-		#print (self.speed[0])
-		#print (self.position)
-		#print (self.rectangle)
-
-
-	def shot(self):
-		beas_position = [self.position[0] , self.position[1] - self.rectangle.height]
-		#self.gameplay_instance.create_object(beas_position, speed=[self.shot_power,self.shot_power], name="shell", classname="Shell")
-		#self.shot_power = 100
-		#self.shot_power_amp = 0
-
-	def aim(self):
-		pass
+		#self.position[1] = self.position[1] - self.speed[1]/FPS
+		self.rectangle.midbottom = [int(round(self.position[0])), int(round(self.position[1]))]
 
 	def draw(self, surface):
 		surface.blit(self.picture, self.rectangle)
 		self.cannon.draw(surface)
-		return self.picture, self.rectangle
 
 
 class TankCannon(Game_object):
-	moveleft = 0
-	moveright = 0
+	moveleft = moveright = 0
 	movecannon = 0
 	shot_power_amp = 0
 	shot_power = shot_power_min = 200
 	shot_power_max = 800
-	cannon_vector = [0.5, 0.5]
 	rot = 0
-
 
 	def __init__(self, position, speed=[0,0], name=None, gameplay_instance=None):
 		super().__init__(position[:], speed, "tankcannon", gameplay_instance)
 		self.image_orig = pygame.Surface((30 , 4), pygame.SRCALPHA)  
-		#self.image_orig.set_colorkey(COLOR_BLACK)  # for making transparent background while rotating an image 
 		self.image_orig.fill((250,10,10))  # fill the rectangle / surface with green color
 		self.image = self.image_orig.copy()  # creating a copy of orignal image for smooth rotation 
 		self.image.set_colorkey(COLOR_BLACK)  
-		self.rectangle = self.image_orig.get_rect()  # define rect for placing the rectangle at the desired position
-		self.rectangle.x = self.position[0]
-		self.rectangle.y = self.position[1]
-		
-		#rect.center = (WIDTH // 2 , HEIGHT // 2)  
+		self.rectangle = self.image.get_rect()  # define rect for placing the rectangle at the desired position
+		self.rectangle.bottomleft = (self.position[0], self.position[1])
+		 
 
 	def event(self, **event):
 		if "left" in event:
@@ -178,10 +139,8 @@ class TankCannon(Game_object):
 			if event['space'] == 1:
 				self.shot_power_amp = 10
 			if event['space'] == 0:
-				self.shot_power_amp = 0
 				self.shot()
 		self.movecannon = self.moveright - self.moveleft
-		print(self.movecannon)
 
 
 	def move(self, position):
@@ -206,7 +165,6 @@ class TankCannon(Game_object):
 				self.rectangle.bottomright = (self.position[0]+2, self.position[1])
 
 
-
 	def draw(self, surface):
 		surface.blit(self.image , self.rectangle) 
 
@@ -219,6 +177,7 @@ class TankCannon(Game_object):
 		speed = [self.shot_power * math.cos(math.radians(self.rot)), self.shot_power * math.sin(math.radians(self.rot))]
 		self.gameplay_instance.create_object(beas_position, speed=speed, name="shell", classname="Shell")
 		self.shot_power = self.shot_power_min
+		self.shot_power_amp = 0
 
 
 class Shell(Game_object):
@@ -232,8 +191,8 @@ class Shell(Game_object):
 			#return
 
 		self.speed = phisical_move(self.speed[:], gravity=True)
-		self.position[0] = self.position[0] + self.speed[0]/FPS
-		self.position[1] = self.position[1] - self.speed[1]/FPS
+		self.position[0] += self.speed[0]/FPS
+		self.position[1] -= self.speed[1]/FPS
 		#print(self.position)
 
 	def check_collision(self):
@@ -245,9 +204,7 @@ class Shell(Game_object):
 
 	def draw(self, surface):
 		beas_position = int(round(self.position[0])), int(round(self.position[1]))
-		#print(beas_position)
 		self.rectangle = pygame.draw.circle(surface, (0,0,0), beas_position, 4)
-
 
 
 class Airplane(Game_object):
@@ -290,11 +247,11 @@ class GamePlay():
 		pygame.display.set_caption("Object Oriented Tank")
 		self.objects = []
 		self.create_object(position=[width/2,height], speed=[0,0], name="Tank", classname="Tank")
-		self.shells = list()
+
 
 	def key_handler(self, key, eventtype):
 		if key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN,pygame.K_SPACE):
-			self.objects[0].key_handler(key, eventtype) # Tank is firstobject in list
+			self.objects[0].key_handler(key, eventtype) # Tank is first object in list
 
 
 	def create_object(self, position, speed, name, classname):
@@ -326,7 +283,7 @@ class GamePlay():
 			self.objects_draw()
 			pygame.display.flip()
 
-COROR_WHITE = 255, 255, 255
+COLOR_WHITE = 255, 255, 255
 COLOR_BLACK = 0, 0, 0
 COLOR_SKY = 100, 100, 255
 FPS = 100
