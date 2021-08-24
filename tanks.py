@@ -3,7 +3,7 @@ import math
 
 def phisical_move(speed, acceleraton=[0,0], gravity=False, wind_speed=0, environment_resistance=0.00001):
 	if gravity:
-		g = 9.81 / 2 # подобрать оптимальный g
+		g = 9.81 / 2 # find the optimal g
 	else:
 		g = 0
 	if speed[0] > 0:
@@ -159,7 +159,7 @@ class TankCannon(Game_object):
 
 		if self.movecannon !=0 or self.position != position:
 			self.position = position[:] 
-			if self.rot < 90: #TODO убрать перепрыгивание пушки возле 90град
+			if self.rot < 90:
 				self.rectangle.bottomleft = (self.position[0]-2, self.position[1])
 			else:
 				self.rectangle.bottomright = (self.position[0]+2, self.position[1])
@@ -174,7 +174,7 @@ class TankCannon(Game_object):
 		else:
 			x = self.position[0] - self.rectangle.width
 		beas_position = [x , self.position[1] - self.rectangle.height + 2 ]
-		speed = [self.shot_power * math.cos(math.radians(self.rot)), self.shot_power * math.sin(math.radians(self.rot))]
+		speed = [self.shot_power * math.cos(math.radians(self.rot)), self.shot_power * math.sin(math.radians(self.rot))] # + tank speed need
 		self.gameplay_instance.create_object(beas_position, speed=speed, name="shell", classname="Shell")
 		self.shot_power = self.shot_power_min
 		self.shot_power_amp = 0
@@ -185,7 +185,7 @@ class Shell(Game_object):
 		super().__init__(position, speed, "shell", gameplay_instance)
 
 	def move(self):
-		if self.position[1] >= (600 - 4):   #hardcode!!!!!!!!!
+		if self.position[1] >= (600 - 4):   #Attention! hardcode!!!!!!!!!
 			self.position[1] = 600 - 4
 			self.speed[1] = -(self.speed[1] - self.speed[1]*0.1)
 			#return
@@ -199,7 +199,7 @@ class Shell(Game_object):
 		pass
 
 	def bang(self):
-		#TODO вызов объекта "взрыв", взрыв, делает обратный вызов деструктора объекта
+		#TODO make bigbang and callback destructor of Shell object
 		pass
 
 	def draw(self, surface):
@@ -220,7 +220,7 @@ class Airplane(Game_object):
 
 class Bomb(Game_object):
 	def __init__(self, position, speed, name=None, gameplay_instance=None):
-		super().__init__(position, speed, "Bomb", gameplay_instance) #явный вызов конструктора базового класса
+		super().__init__(position, speed, "Bomb", gameplay_instance)
 		pass
 
 	def move(self):
